@@ -13,7 +13,7 @@ class Vector {
         return new Vector(this.x + vector.x, this.y + vector.y);
     }
 
-    times(factor) {
+    times(factor = 1) {
         return new Vector(this.x * factor, this.y * factor);
     }
 }
@@ -59,7 +59,8 @@ class Actor {
         if (obj === this) {
             return false;
         }
-        return (!(obj.left >= this.right || obj.right <= this.left || obj.top >= this.bottom || obj.bottom <= this.top));
+        //return (!(obj.left >= this.right || obj.right <= this.left || obj.top >= this.bottom || obj.bottom <= this.top));
+        return (obj.left < this.right && obj.right > this.left && obj.top < this.bottom && obj.bottom > this.top);
     }
 }
 
@@ -72,8 +73,13 @@ class Level {
         this.status = null;
         this.finishDelay = 1;
         this.width = this.height > 0 ? Math.max.apply(Math, this.grid.map(function(el) {
-            return el.length;
+           return el.length;
         })) : 0;
+        //this.width = this.height > 0 ? Math.max(...arr, this.grid.map(function(el) {
+        //    return el.length;
+        //})) : 0;
+        //this.width = grid.reduce((width, line) => line.length > width ? line.length : width, 0);
+        // не получилось у меня с оператором спред, решил оставить, как было
     }
 
     isFinished() {
@@ -107,7 +113,9 @@ class Level {
         for (let y = yMin; y < yMax; y++) {
             for (let x = xMin; x < xMax; x++) {
                 const cell = this.grid[y][x]
-                if (cell) return cell;
+                if (cell) {
+                    return cell;
+                }
             }
         }
     }
@@ -160,25 +168,28 @@ class LevelParser {
 
     createGrid(arr) {
         return arr.map(elemY => elemY.split('').map(elemX => this.obstacle[elemX]));
+        // извините, не понял на счёт метода obstacleAt
+        // подскажите, пожалуйста )
     }
 
     createActors(arr = []) {
-        let { dictionary } = this;
-        let actors = [];
+        const { dictionary } = this;
+        const actors = [];
 
         arr.forEach((elemY, y) => elemY.split('').forEach((elemX, x) => {
-            let key = dictionary[elemX];
+            const key = dictionary[elemX];
             if (typeof key !== 'function') {
                 return;
             }
 
-            let obj = new key(new Vector(x, y));
+            const obj = new key(new Vector(x, y));
             if (obj instanceof Actor) {
-            actors.push(obj);
+                actors.push(obj);
             }
         }));
         return actors;
     }
+    // поправил форматирование чуть выше, в createActors
 
     parse(arr) {
         return new Level(this.createGrid(arr), this.createActors(arr));
@@ -203,8 +214,8 @@ class Fireball extends Actor {
     }
 
     act(time, level) {
-        let nextPos = this.getNextPosition(time);
-        let obstacle = level.obstacleAt(nextPos, this.size);
+        const nextPos = this.getNextPosition(time);
+        const obstacle = level.obstacleAt(nextPos, this.size);
 
         if(obstacle) {
             this.handleObstacle();
@@ -240,6 +251,7 @@ class FireRain extends Fireball {
 class Coin extends Actor {
     constructor(pos = new Vector(1, 1)) {
         super(new Vector(pos.x + 0.2, pos.y + 0.1), new Vector(0.6, 0.6));
+        // не понял Вашей рекомендации здесь про .plus
         this.beginPos = pos;
         this.springSpeed = 8;
         this.springDist = 0.07;
@@ -262,6 +274,7 @@ class Coin extends Actor {
         this.updateSpring(time);
         let springVector = this.getSpringVector();
         return new Vector(this.pos.x, this.pos.y + springVector.y * time);
+        // не понял Вашей рекомендации здесь про .plus
     }
 
     act(time) {
@@ -272,6 +285,7 @@ class Coin extends Actor {
 class Player extends Actor {
     constructor(pos = new Vector(1, 1)) {
         super(new Vector(pos.x, pos.y - 0.5), new Vector(0.8, 1.5));
+        // не понял Вашей рекомендации здесь про .plus
     }
 
     get type() {
